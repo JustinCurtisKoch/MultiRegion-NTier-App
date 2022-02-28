@@ -365,3 +365,155 @@ resource "azurerm_traffic_manager_endpoint" "tmendpoint_secondary" {
   target              = azurerm_public_ip.pip_secondary.fqdn
   endpoint_location   = azurerm_public_ip.pip_secondary.location
 }
+
+#primary virtual network- data tier load balancer
+resource "azurerm_lb" "vnet1datalb" {
+  name                = var.vnet1datalb
+  location            = azurerm_resource_group.primary.location
+  resource_group_name = azurerm_resource_group.primary.name
+
+  frontend_ip_configuration {
+    name                          = "PrivateIPAddress"
+    subnet_id                     = azurerm_subnet.datasubnet1.id
+    private_ip_address            = "10.0.4.5"
+    private_ip_address_allocation = "static"
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "vnet1databepool" {
+  resource_group_name = azurerm_resource_group.primary.name
+  loadbalancer_id     = azurerm_lb.vnet1datalb.id
+  name                = "BackEndAddressPool"
+}
+
+#primary virtual network- data tier nic
+resource "azurerm_network_interface" "vnet1sqlnic" {
+  name                = var.vnet1sqlnic
+  location            = azurerm_resource_group.primary.location
+  resource_group_name = azurerm_resource_group.primary.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.datasubnet1.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "vnet1sqlnicbepool" {
+  network_interface_id    = azurerm_network_interface.vnet1sqlnic.id
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.vnet1databepool.id
+}
+
+#primary virtual network- data tier sql server
+resource "azurerm_virtual_machine" "vnet1sqlserver" {
+  name                  = var.vnet1sqlserver
+  location              = azurerm_resource_group.primary.location
+  resource_group_name   = azurerm_resource_group.primary.name
+  network_interface_ids = [azurerm_network_interface.vnet1sqlnic.id]
+  vm_size               = "Standard_DS1_v2"
+
+  #Uncomment this line to delete the OS disk automatically when deleting the VM
+  # delete_os_disk_on_termination = true
+
+  # Uncomment this line to delete the data disks automatically when deleting the VM
+  # delete_data_disks_on_termination = true
+
+  storage_image_reference {
+    publisher = "MicrosoftSQLServer"
+    offer     = "SQL2016SP2-WS2016"
+    sku       = "SQLDEV"
+    version   = "latest"
+  }
+
+  storage_os_disk {
+    name              = "sqloneosdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+  os_profile {
+    computer_name  = "hostname"
+    admin_username = "azureuser"
+    admin_password = "P@55word2022"
+  }
+  os_profile_windows_config {
+    provision_vm_agent = true
+  }
+}
+
+#secondary virtual network- data tier load balancer
+resource "azurerm_lb" "vnet2datalb" {
+  name                = var.vnet2datalb
+  location            = azurerm_resource_group.secondary.location
+  resource_group_name = azurerm_resource_group.secondary.name
+
+  frontend_ip_configuration {
+    name                          = "PrivateIPAddress"
+    subnet_id                     = azurerm_subnet.datasubnet2.id
+    private_ip_address            = "10.1.4.5"
+    private_ip_address_allocation = "static"
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "vnet2databepool" {
+  resource_group_name = azurerm_resource_group.secondary.name
+  loadbalancer_id     = azurerm_lb.vnet2datalb.id
+  name                = "BackEndAddressPool"
+}
+
+#secondary virtual network- data tier nic
+resource "azurerm_network_interface" "vnet2sqlnic" {
+  name                = var.vnet2sqlnic
+  location            = azurerm_resource_group.secondary.location
+  resource_group_name = azurerm_resource_group.secondary.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.datasubnet2.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "vnet2sqlnicbepool" {
+  network_interface_id    = azurerm_network_interface.vnet2sqlnic.id
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.vnet2databepool.id
+}
+
+#secondary virtual network- data tier sql server
+resource "azurerm_virtual_machine" "vnet2sqlserver" {
+  name                  = var.vnet2sqlserver
+  location              = azurerm_resource_group.secondary.location
+  resource_group_name   = azurerm_resource_group.secondary.name
+  network_interface_ids = [azurerm_network_interface.vnet2sqlnic.id]
+  vm_size               = "Standard_DS1_v2"
+
+  #Uncomment this line to delete the OS disk automatically when deleting the VM
+  # delete_os_disk_on_termination = true
+
+  # Uncomment this line to delete the data disks automatically when deleting the VM
+  # delete_data_disks_on_termination = true
+
+  storage_image_reference {
+    publisher = "MicrosoftSQLServer"
+    offer     = "SQL2016SP2-WS2016"
+    sku       = "SQLDEV"
+    version   = "latest"
+  }
+
+  storage_os_disk {
+    name              = "sqltwoosdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+  os_profile {
+    computer_name  = "hostname"
+    admin_username = "azureuser"
+    admin_password = "P@55word2022"
+  }
+  os_profile_windows_config {
+    provision_vm_agent = true
+  }
+}

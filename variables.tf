@@ -156,3 +156,30 @@ variable "tmendpoint_primary" {
 variable "tmendpoint_secondary" {
   type = string
 }
+
+#data tier load balancer
+variable "vnet1datalb" {
+  type = string
+}
+
+variable "vnet2datalb" {
+  type = string
+}
+
+#data tier nic
+variable "vnet1sqlnic" {
+  type = string
+}
+
+variable "vnet2sqlnic" {
+  type = string
+}
+
+#data tier sql server
+variable "vnet1sqlserver" {
+  type = string
+}
+
+variable "vnet2sqlserver" {
+  type = string
+}

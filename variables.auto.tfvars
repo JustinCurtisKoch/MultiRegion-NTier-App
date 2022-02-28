@@ -66,3 +66,15 @@ appgw_secondary = "appgw_secondary"
 traffic_manager = "trafficmanagerteamthree"
 tmendpoint_primary = "tmendpoint_primary"
 tmendpoint_secondary = "tmendpoint_secondary"
+
+#data tier load balancer
+vnet1datalb = "vnet1datalb"
+vnet2datalb = "vnet2datalb"
+
+#data tier nic
+vnet1sqlnic = "vnet1sqlnic"
+vnet2sqlnic = "vnet2sqlnic"
+
+#data tier sql server
+vnet1sqlserver = "vnet1sqlserver"
+vnet2sqlserver = "vnet2sqlserver"
