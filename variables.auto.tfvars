@@ -46,35 +46,23 @@ trafficmanagersubnet = "trafficmanagersubnet"
 primarytosecondary = "primarytpsecondary"
 secondarytoprimary = "secondarytoprimary"
 
+#app service plans
+appserviceplan_primary = "appserviceplan_primary"
+appserviceplan_secondary = "appserviceplansecondary"
 
+# app services
+appservice_primary = "appservice-primary"
+appservice_secondary = "appservice-secondary"
 
+# dynamic ip addresses
+pip_primary = "pip_primary"
+pip_secondary = "pip_secondary"
 
+# application gateway
+appgw_primary = "appgw_primary"
+appgw_secondary = "appgw_secondary"
 
-
-#PIP
-linux1_pip_allocation_method = "Dynamic"
-
-#linux1_VM
-linux1_publisher                = "Canonical"
-linux1_offer                    = "UbuntuServer"
-linux1_sku                      = "18.04-LTS"
-linux1_version                  = "latest"
-linux1_storage_os_disk_caching  = "ReadWrite"
-linux1_create_option            = "FromImage"
-linux1_managed_disk_type        = "Standard_LRS"
-linux1_os_profile_computer_name = "hostname"
-
-#Security Variables
-security_rule_name                       = "allow-22"
-security_rule_priority                   = 100
-security_rule_direction                  = "Inbound"
-security_rule_access                     = "Allow"
-security_rule_protocol                   = "Tcp"
-security_rule_source_port_range          = "*"
-security_rule_destination_port_range     = "*"
-security_rule_source_address_prefix      = "*"
-security_rule_destination_address_prefix = "*"
-
-#Vault Variables
-secrets_rg_name   = "secrets"
-secret_vault_name = "bjgsecrets"
+# traffic manager
+traffic_manager = "trafficmanagerteamthree"
+tmendpoint_primary = "tmendpoint_primary"
+tmendpoint_secondary = "tmendpoint_secondary"

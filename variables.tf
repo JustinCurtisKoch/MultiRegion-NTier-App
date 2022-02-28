@@ -107,3 +107,52 @@ variable "primarytosecondary" {
 variable "secondarytoprimary" {
   type = string
 }
+
+#app service plans
+variable "appserviceplan_primary" {
+  type = string
+}
+
+variable "appserviceplan_secondary" {
+  type = string
+}
+
+# app services
+variable "appservice_primary" {
+  type = string
+}
+
+variable "appservice_secondary" {
+  type = string
+}
+
+# dynamic ip addresses
+variable "pip_primary" {
+  type = string
+}
+
+variable "pip_secondary" {
+  type = string
+}
+
+# application gateway
+variable "appgw_primary" {
+  type = string
+}
+
+variable "appgw_secondary" {
+  type = string
+}
+
+# traffic manager
+variable "traffic_manager" {
+  type = string
+}
+
+variable "tmendpoint_primary" {
+  type = string
+}
+
+variable "tmendpoint_secondary" {
+  type = string
+}
