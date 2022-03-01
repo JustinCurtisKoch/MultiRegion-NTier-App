@@ -183,3 +183,29 @@ variable "vnet1sqlserver" {
 variable "vnet2sqlserver" {
   type = string
 }
+
+#BASTION HOSTS
+variable "bastion1_pip" {
+  type = string
+}
+
+variable "bastion1_name" {
+  type = string
+}
+
+variable "bastion2_pip" {
+  type = string
+}
+
+variable "bastion2_name" {
+  type = string
+}
+
+#LOAD BALLENCERS- business tier
+variable "vnet1buslb" {
+  type = string
+}
+
+variable "vnet2buslb" {
+  type = string
+}

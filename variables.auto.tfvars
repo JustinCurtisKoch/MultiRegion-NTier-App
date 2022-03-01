@@ -78,3 +78,13 @@ vnet2sqlnic = "vnet2sqlnic"
 #data tier sql server
 vnet1sqlserver = "vnet1sqlserver"
 vnet2sqlserver = "vnet2sqlserver"
+
+#BASTION HOSTS
+bastion1_pip  = "bastion1pip"
+bastion2_pip  = "bastion2pip"
+bastion1_name = "bastionprimary"
+bastion2_name = "bastionsecondary"
+
+#LOAD BALLENCERS- business tier
+vnet1buslb = "vnetbusl1b"
+vnet2buslb = "vnetbus2lb"

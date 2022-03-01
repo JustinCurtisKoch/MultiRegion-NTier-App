@@ -517,3 +517,268 @@ resource "azurerm_virtual_machine" "vnet2sqlserver" {
     provision_vm_agent = true
   }
 }
+
+#BASTION HOSTS
+#Bastion 1- VNET 1
+#Creating the Public IP: Bastion Host 1
+resource "azurerm_public_ip" "bastion1_pip" {
+  name                = var.bastion1_pip
+  location            = azurerm_resource_group.primary.location
+  resource_group_name = azurerm_resource_group.primary.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+#Creating the resource: Bastion Host 1
+resource "azurerm_bastion_host" "firstBastion" {
+  name                = var.bastion1_name
+  location            = azurerm_resource_group.primary.location
+  resource_group_name = azurerm_resource_group.primary.name
+
+  ip_configuration {
+    name                 = "configbastion1"
+    subnet_id            = azurerm_subnet.AzureBastionSubnet.id
+    public_ip_address_id = azurerm_public_ip.bastion1_pip.id
+  }
+}
+
+#Bastion 2- VNET 2
+#Creating the Public IP: Bastion Host 2
+resource "azurerm_public_ip" "bastion2_pip" {
+  name                = var.bastion2_pip
+  location            = azurerm_resource_group.secondary.location
+  resource_group_name = azurerm_resource_group.secondary.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+#Creating the resource: Bastion Host 2
+resource "azurerm_bastion_host" "secondBastion" {
+  name                = var.bastion2_name
+  location            = azurerm_resource_group.secondary.location
+  resource_group_name = azurerm_resource_group.secondary.name
+
+  ip_configuration {
+    name                 = "configbastion2"
+    subnet_id            = azurerm_subnet.AzureBastionSubnet2.id
+    public_ip_address_id = azurerm_public_ip.bastion2_pip.id
+  }
+}
+
+#LOAD BALLENCERS
+#LB Created for Business Hosts 1
+resource "azurerm_lb" "vnet1buslb" {
+  name                = var.vnet1buslb
+  location            = azurerm_resource_group.primary.location
+  resource_group_name = azurerm_resource_group.primary.name
+
+  frontend_ip_configuration {
+    name                          = "PrivateIPAddress"
+    subnet_id                     = azurerm_subnet.businesssubnet1.id
+    private_ip_address            = "10.0.3.5"
+    private_ip_address_allocation = "static"
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "bus1bepool" {
+  loadbalancer_id = azurerm_lb.vnet1buslb.id
+  name            = "BackEndAddressPool1"
+}
+
+resource "azurerm_lb_rule" "lb1natrule" {
+   resource_group_name            = azurerm_resource_group.primary.name
+   loadbalancer_id                = azurerm_lb.vnet1buslb.id
+   name                           = "http"
+   protocol                       = "Tcp"
+   frontend_port                  = 50000
+   backend_port                   = 50010
+   backend_address_pool_id        = azurerm_lb_backend_address_pool.bus1bepool.id
+   frontend_ip_configuration_name = "PrivateIPAddress"
+   probe_id                       = azurerm_lb_probe.businesshealth1.id
+}
+
+#LB Created for Business Hosts 2
+resource "azurerm_lb" "vnet2buslb" {
+  name                = var.vnet2buslb
+  location            = azurerm_resource_group.secondary.location
+  resource_group_name = azurerm_resource_group.secondary.name
+
+
+  frontend_ip_configuration {
+    name                          = "PrivateIPAddress"
+    subnet_id                     = azurerm_subnet.businesssubnet2.id
+    private_ip_address            = "10.1.3.5"
+    private_ip_address_allocation = "static"
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "bus2bepool" {
+  loadbalancer_id = azurerm_lb.vnet2buslb.id
+  name            = "BackEndAddressPool2"
+}
+
+resource "azurerm_lb_rule" "lb2natrule" {
+   resource_group_name            = azurerm_resource_group.secondary.name
+   loadbalancer_id                = azurerm_lb.vnet2buslb.id
+   name                           = "http"
+   protocol                       = "Tcp"
+   frontend_port                  = 50000
+   backend_port                   = 50010
+   backend_address_pool_id        = azurerm_lb_backend_address_pool.bus2bepool.id
+   frontend_ip_configuration_name = "PrivateIPAddress"
+   probe_id                       = azurerm_lb_probe.businesshealth2.id
+}
+
+#BUSINESS TIER VM1 Scale Set
+#Health probe for the VMS in Business 1
+resource "azurerm_lb_probe" "businesshealth1" {
+  resource_group_name = azurerm_resource_group.primary.location
+  loadbalancer_id     = azurerm_lb.vnet1buslb.id
+  name                = "http-probe-business1"
+  protocol            = "Http"
+  request_path        = "/health"
+  port                = 8080
+}
+
+#Scale Set- Business Teir
+resource "azurerm_virtual_machine_scale_set" "businesstier1" {
+  name                = "businesstier1"
+  location            = azurerm_resource_group.primary.location
+  resource_group_name = azurerm_resource_group.primary.name
+
+  # automatic rolling upgrade
+  automatic_os_upgrade = true
+  upgrade_policy_mode  = "Rolling"
+
+  rolling_upgrade_policy {
+    max_batch_instance_percent              = 20
+    max_unhealthy_instance_percent          = 20
+    max_unhealthy_upgraded_instance_percent = 5
+    pause_time_between_batches              = "PT0S"
+  }
+
+  # required when using rolling upgrade policy
+  health_probe_id = azurerm_lb_probe.businesshealth1.id
+
+  sku {
+    name     = "Standard_B1s"
+    tier     = "Standard"
+    capacity = 3
+  }
+
+  storage_profile_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
+
+  storage_profile_os_disk {
+    name              = ""
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+
+  os_profile {
+    computer_name_prefix = "business1"
+    admin_username       = "myadmin"
+    admin_password       = "Password1234!"
+  }
+
+  os_profile_linux_config {
+    disable_password_authentication = false
+
+
+  }
+  #Define Network Profile
+  network_profile {
+    name    = "business1networkpro"
+    primary = true
+
+    ip_configuration {
+      name                                   = "BusinessIPConfig"
+      primary                                = true
+      subnet_id                              = azurerm_subnet.businesssubnet1.id
+      load_balancer_backend_address_pool_ids = [azurerm_lb_backend_address_pool.bus1bepool.id]
+    }
+  }
+
+
+}
+
+#BUSINESS TIER VM2 Scale Set 2
+#Health probe for the VMS in Business 2
+resource "azurerm_lb_probe" "businesshealth2" {
+  resource_group_name = azurerm_resource_group.secondary.location
+  loadbalancer_id     = azurerm_lb.vnet2buslb.id
+  name                = "http-probe-business2"
+  protocol            = "Http"
+  request_path        = "/health"
+  port                = 8080
+}
+
+
+#Scale Set- Business Teir 2
+resource "azurerm_virtual_machine_scale_set" "businesstier2" {
+  name                = "businesstier2"
+  location            = azurerm_resource_group.secondary.location
+  resource_group_name = azurerm_resource_group.secondary.name
+  # automatic rolling upgrade
+  automatic_os_upgrade = true
+  upgrade_policy_mode  = "Rolling"
+
+  rolling_upgrade_policy {
+    max_batch_instance_percent              = 20
+    max_unhealthy_instance_percent          = 20
+    max_unhealthy_upgraded_instance_percent = 5
+    pause_time_between_batches              = "PT0S"
+  }
+
+  # required when using rolling upgrade policy (Buisness 2)
+  health_probe_id = azurerm_lb_probe.businesshealth2.id
+
+  sku {
+    name     = "Standard_B1s"
+    tier     = "Standard"
+    capacity = 3
+  }
+
+  storage_profile_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "16.04-LTS"
+    version   = "latest"
+  }
+
+  storage_profile_os_disk {
+    name              = ""
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+
+  os_profile {
+    computer_name_prefix = "business2"
+    admin_username       = "myadmin"
+    admin_password       = "Password1234!"
+  }
+
+  os_profile_linux_config {
+    disable_password_authentication = false
+
+
+  }
+  #Define Network Profile (Business 2)
+  network_profile {
+    name    = "business2networkpro"
+    primary = true
+
+    ip_configuration {
+      name                                   = "BusinessIPConfig2"
+      primary                                = true
+      subnet_id                              = azurerm_subnet.businesssubnet2.id
+      load_balancer_backend_address_pool_ids = [azurerm_lb_backend_address_pool.bus2bepool.id]
+    }
+  }
+}
