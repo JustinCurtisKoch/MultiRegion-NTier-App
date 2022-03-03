@@ -41,11 +41,6 @@ variable "network_name_tm" {
 
 #primary vnet subnets
 
-variable "managementsubnet1" {
-  type = string
-}
-#add variable subnet space
-
 variable "websubnet1" {
   type = string
 }
@@ -61,18 +56,7 @@ variable "datasubnet1" {
 }
 #add variable subnet space
 
-variable "ADsubnet1" {
-  type = string
-}
-#add variable subnet space
-
 #secondary vnet subnets
-
-variable "managementsubnet2" {
-  type = string
-}
-#add variable subnet space
-
 variable "websubnet2" {
   type = string
 }
@@ -84,11 +68,6 @@ variable "businesssubnet2" {
 #add variable subnet space
 
 variable "datasubnet2" {
-  type = string
-}
-#add variable subnet space
-
-variable "ADsubnet2" {
   type = string
 }
 #add variable subnet space

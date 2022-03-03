@@ -1,9 +1,9 @@
 #resource group variables
-resource_group_name_primary   = "primaryRG"
+resource_group_name_primary   = "primaryRGtest"
 location_primary              = "eastus"
-resource_group_name_secondary = "secondaryRG"
+resource_group_name_secondary = "secondaryRGtest"
 location_secondary            = "centralus"
-resource_group_name_tm        = "trafficmanagerRG"
+resource_group_name_tm        = "trafficmanagerRGtest"
 location_tm                   = "eastus"
 
 #virtual networks variables
@@ -14,28 +14,20 @@ network_name_secondary = "vnetsecondary"
 network_name_tm = "vnettrafficmanager"
 #add address space
 
-#primary vnet subnets
-managementsubnet1 = "managementsubnet1"
-#add variable subnet space
+#primary vnet subnet
 websubnet1 = "websubnet1"
 #add variable subnet space
 businesssubnet1 = "businesssubnet1"
 #add variable subnet space
 datasubnet1 = "databasesubnet1"
 #add variable subnet space
-ADsubnet1 = "activedirectorysubent1"
-#add variable subnet space
 
-#secondary vnet subnets
-managementsubnet2 = "managementsubnet2"
-#add variable subnet space
+#secondary vnet subnet
 websubnet2 = "websubnet2"
 #add variable subnet space
 businesssubnet2 = "businesssubnet2"
 #add variable subnet space
 datasubnet2 = "databasesubnet2"
-#add variable subnet space
-ADsubnet2 = "activedirectorysubent2"
 #add variable subnet space
 
 #traffic manager vnet subnet
@@ -43,28 +35,28 @@ trafficmanagersubnet = "trafficmanagersubnet"
 #add variable subnet space
 
 #virtual network peering
-primarytosecondary = "primarytpsecondary"
+primarytosecondary = "primarytosecondary"
 secondarytoprimary = "secondarytoprimary"
 
 #app service plans
-appserviceplan_primary = "appserviceplan_primary"
-appserviceplan_secondary = "appserviceplansecondary"
+appserviceplan_primary   = "appserviceplan_primary"
+appserviceplan_secondary = "appserviceplan_secondary"
 
 # app services
-appservice_primary = "appservice-primary"
-appservice_secondary = "appservice-secondary"
+appservice_primary   = "appservice-primarytst"
+appservice_secondary = "appservice-secondarytst"
 
 # dynamic ip addresses
-pip_primary = "pip_primary"
+pip_primary   = "pip_primary"
 pip_secondary = "pip_secondary"
 
 # application gateway
-appgw_primary = "appgw_primary"
+appgw_primary   = "appgw_primary"
 appgw_secondary = "appgw_secondary"
 
 # traffic manager
-traffic_manager = "trafficmanagerteamthree"
-tmendpoint_primary = "tmendpoint_primary"
+traffic_manager      = "trafficmanagerteamthreetest"
+tmendpoint_primary   = "tmendpoint_primary"
 tmendpoint_secondary = "tmendpoint_secondary"
 
 #data tier load balancer
@@ -86,5 +78,5 @@ bastion1_name = "bastionprimary"
 bastion2_name = "bastionsecondary"
 
 #LOAD BALLENCERS- business tier
-vnet1buslb = "vnetbusl1b"
-vnet2buslb = "vnetbus2lb"
+vnet1buslb = "vnet1businesslb"
+vnet2buslb = "vnet2businesslb"

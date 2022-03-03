@@ -36,15 +36,7 @@ resource "azurerm_virtual_network" "trafficmanager" {
   resource_group_name = azurerm_resource_group.trafficmanager.name
 }
 
-#primary vnet subnets
-#primary vnet subnet- management
-resource "azurerm_subnet" "managementsubnet1" {
-  name                 = var.managementsubnet1
-  resource_group_name  = azurerm_resource_group.primary.name
-  virtual_network_name = azurerm_virtual_network.primarynet.name
-  address_prefixes     = ["10.0.1.0/24"]
-}
-
+#primary vnet subnet
 #primary vnet subnet- web
 resource "azurerm_subnet" "websubnet1" {
   name                 = var.websubnet1
@@ -69,23 +61,15 @@ resource "azurerm_subnet" "datasubnet1" {
   address_prefixes     = ["10.0.4.0/24"]
 }
 
-#primary vnet subnet- AD
-resource "azurerm_subnet" "ADsubnet1" {
-  name                 = var.ADsubnet1
+#primary vnet subnet- Bastion
+resource "azurerm_subnet" "AzureBastionSubnet1" {
+  name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.primary.name
   virtual_network_name = azurerm_virtual_network.primarynet.name
-  address_prefixes     = ["10.0.5.0/24"]
+  address_prefixes     = ["10.0.6.0/24"]
 }
 
-#secondary vnet subnets
-#secondary vnet subnet- management
-resource "azurerm_subnet" "managementsubnet2" {
-  name                 = var.managementsubnet2
-  resource_group_name  = azurerm_resource_group.secondary.name
-  virtual_network_name = azurerm_virtual_network.secondarynet.name
-  address_prefixes     = ["10.1.1.0/24"]
-}
-
+#secondary vnet subnet
 #secondary vnet subnet- web
 resource "azurerm_subnet" "websubnet2" {
   name                 = var.websubnet2
@@ -110,12 +94,12 @@ resource "azurerm_subnet" "datasubnet2" {
   address_prefixes     = ["10.1.4.0/24"]
 }
 
-#secondary vnet subnet- AD
-resource "azurerm_subnet" "ADsubnet2" {
-  name                 = var.ADsubnet2
+#Secondary vnet subnet- Bastion
+resource "azurerm_subnet" "AzureBastionSubnet2" {
+  name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.secondary.name
   virtual_network_name = azurerm_virtual_network.secondarynet.name
-  address_prefixes     = ["10.1.5.0/24"]
+  address_prefixes     = ["10.1.6.0/24"]
 }
 
 #traffic manager vnet subnet
@@ -181,17 +165,17 @@ resource "azurerm_app_service" "app-service-secondary" {
 
 # dynamic ip addresses
 resource "azurerm_public_ip" "pip_primary" {
-  name                         = var.pip_primary
-  location                     = azurerm_resource_group.primary.location
-  resource_group_name          = azurerm_resource_group.primary.name
-  allocation_method = "Dynamic"
+  name                = var.pip_primary
+  location            = azurerm_resource_group.primary.location
+  resource_group_name = azurerm_resource_group.primary.name
+  allocation_method   = "Dynamic"
 }
 
 resource "azurerm_public_ip" "pip_secondary" {
-  name                         = var.pip_secondary
-  location                     = azurerm_resource_group.secondary.location
-  resource_group_name          = azurerm_resource_group.secondary.name
-  allocation_method = "Dynamic"
+  name                = var.pip_secondary
+  location            = azurerm_resource_group.secondary.location
+  resource_group_name = azurerm_resource_group.secondary.name
+  allocation_method   = "Dynamic"
 }
 
 
@@ -200,7 +184,7 @@ resource "azurerm_application_gateway" "appgw_primary" {
   name                = var.appgw_primary
   resource_group_name = azurerm_resource_group.primary.name
   location            = azurerm_resource_group.primary.location
- 
+
   sku {
     name     = "Standard_Small"
     tier     = "Standard"
@@ -223,7 +207,7 @@ resource "azurerm_application_gateway" "appgw_primary" {
   }
 
   backend_address_pool {
-    name        = azurerm_virtual_network.primarynet.name
+    name  = azurerm_virtual_network.primarynet.name
     fqdns = ["${azurerm_app_service.app-service-primary.name}.azurewebsites.net"]
   }
 
@@ -250,7 +234,7 @@ resource "azurerm_application_gateway" "appgw_primary" {
     port                  = 80
     protocol              = "Http"
     request_timeout       = 1
-    probe_name = "probe"
+    probe_name            = "probe"
   }
 
   request_routing_rule {
@@ -267,7 +251,7 @@ resource "azurerm_application_gateway" "appgw_secondary" {
   name                = var.appgw_secondary
   resource_group_name = azurerm_resource_group.secondary.name
   location            = azurerm_resource_group.secondary.location
- 
+
   sku {
     name     = "Standard_Small"
     tier     = "Standard"
@@ -290,7 +274,7 @@ resource "azurerm_application_gateway" "appgw_secondary" {
   }
 
   backend_address_pool {
-    name        = azurerm_virtual_network.secondarynet.name
+    name  = azurerm_virtual_network.secondarynet.name
     fqdns = ["${azurerm_app_service.app-service-secondary.name}.azurewebsites.net"]
   }
 
@@ -317,7 +301,7 @@ resource "azurerm_application_gateway" "appgw_secondary" {
     port                  = 80
     protocol              = "Http"
     request_timeout       = 1
-    probe_name = "probe"
+    probe_name            = "probe"
   }
 
   request_routing_rule {
@@ -336,7 +320,7 @@ resource "azurerm_traffic_manager_profile" "traffic_manager" {
   traffic_routing_method = "Performance"
 
   dns_config {
-    relative_name = "tm-jck-teamthree"
+    relative_name = "tm-jck-teamthreetest"
     ttl           = 300
   }
 
@@ -353,8 +337,8 @@ resource "azurerm_traffic_manager_endpoint" "tmendpoint_primary" {
   resource_group_name = azurerm_resource_group.trafficmanager.name
   profile_name        = azurerm_traffic_manager_profile.traffic_manager.name
   type                = "externalEndpoints"
-  target              = azurerm_public_ip.pip_primary.fqdn
-  endpoint_location   = azurerm_public_ip.pip_primary.location
+  target              = "${azurerm_public_ip.pip_primary.fqdn}"
+  endpoint_location   = "${azurerm_public_ip.pip_primary.location}"
 }
 
 resource "azurerm_traffic_manager_endpoint" "tmendpoint_secondary" {
@@ -362,159 +346,51 @@ resource "azurerm_traffic_manager_endpoint" "tmendpoint_secondary" {
   resource_group_name = azurerm_resource_group.trafficmanager.name
   profile_name        = azurerm_traffic_manager_profile.traffic_manager.name
   type                = "externalEndpoints"
-  target              = azurerm_public_ip.pip_secondary.fqdn
-  endpoint_location   = azurerm_public_ip.pip_secondary.location
+  target              = "${azurerm_public_ip.pip_secondary.fqdn}"
+  endpoint_location   = "${azurerm_public_ip.pip_secondary.location}"
 }
 
-#primary virtual network- data tier load balancer
-resource "azurerm_lb" "vnet1datalb" {
-  name                = var.vnet1datalb
-  location            = azurerm_resource_group.primary.location
-  resource_group_name = azurerm_resource_group.primary.name
-
-  frontend_ip_configuration {
-    name                          = "PrivateIPAddress"
-    subnet_id                     = azurerm_subnet.datasubnet1.id
-    private_ip_address            = "10.0.4.5"
-    private_ip_address_allocation = "static"
-  }
+#SQL server fail over group
+resource "azurerm_mssql_server" "primarysqlserver" {
+  name                         = "mssqlserver-primary"
+  resource_group_name          = azurerm_resource_group.primary.name
+  location                     = azurerm_resource_group.primary.location
+  version                      = "12.0"
+  administrator_login          = "azureuser"
+  administrator_login_password = "P@55word2022"
 }
 
-resource "azurerm_lb_backend_address_pool" "vnet1databepool" {
-  resource_group_name = azurerm_resource_group.primary.name
-  loadbalancer_id     = azurerm_lb.vnet1datalb.id
-  name                = "BackEndAddressPool"
+resource "azurerm_mssql_server" "secondarysqlserver" {
+  name                         = "mssqlserver-secondary"
+  resource_group_name          = azurerm_resource_group.secondary.name
+  location                     = azurerm_resource_group.secondary.location
+  version                      = "12.0"
+  administrator_login          = "azureuser"
+  administrator_login_password = "P@55word2022"
 }
 
-#primary virtual network- data tier nic
-resource "azurerm_network_interface" "vnet1sqlnic" {
-  name                = var.vnet1sqlnic
-  location            = azurerm_resource_group.primary.location
-  resource_group_name = azurerm_resource_group.primary.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.datasubnet1.id
-    private_ip_address_allocation = "Dynamic"
-  }
+resource "azurerm_mssql_database" "sqldatabase" {
+  name        = "sqldatabase"
+  server_id   = azurerm_mssql_server.primarysqlserver.id
+  sku_name    = "S1"
+  collation   = "SQL_Latin1_General_CP1_CI_AS"
+  max_size_gb = "200"
 }
 
-resource "azurerm_network_interface_backend_address_pool_association" "vnet1sqlnicbepool" {
-  network_interface_id    = azurerm_network_interface.vnet1sqlnic.id
-  ip_configuration_name   = "internal"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.vnet1databepool.id
-}
+resource "azurerm_mssql_failover_group" "sqlfailover" {
+  name      = "sqlfailoverthree"
+  server_id = azurerm_mssql_server.primarysqlserver.id
+  databases = [
+    azurerm_mssql_database.sqldatabase.id
+  ]
 
-#primary virtual network- data tier sql server
-resource "azurerm_virtual_machine" "vnet1sqlserver" {
-  name                  = var.vnet1sqlserver
-  location              = azurerm_resource_group.primary.location
-  resource_group_name   = azurerm_resource_group.primary.name
-  network_interface_ids = [azurerm_network_interface.vnet1sqlnic.id]
-  vm_size               = "Standard_DS1_v2"
-
-  #Uncomment this line to delete the OS disk automatically when deleting the VM
-  # delete_os_disk_on_termination = true
-
-  # Uncomment this line to delete the data disks automatically when deleting the VM
-  # delete_data_disks_on_termination = true
-
-  storage_image_reference {
-    publisher = "MicrosoftSQLServer"
-    offer     = "SQL2016SP2-WS2016"
-    sku       = "SQLDEV"
-    version   = "latest"
+  partner_server {
+    id = azurerm_mssql_server.secondarysqlserver.id
   }
 
-  storage_os_disk {
-    name              = "sqloneosdisk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-  os_profile {
-    computer_name  = "hostname"
-    admin_username = "azureuser"
-    admin_password = "P@55word2022"
-  }
-  os_profile_windows_config {
-    provision_vm_agent = true
-  }
-}
-
-#secondary virtual network- data tier load balancer
-resource "azurerm_lb" "vnet2datalb" {
-  name                = var.vnet2datalb
-  location            = azurerm_resource_group.secondary.location
-  resource_group_name = azurerm_resource_group.secondary.name
-
-  frontend_ip_configuration {
-    name                          = "PrivateIPAddress"
-    subnet_id                     = azurerm_subnet.datasubnet2.id
-    private_ip_address            = "10.1.4.5"
-    private_ip_address_allocation = "static"
-  }
-}
-
-resource "azurerm_lb_backend_address_pool" "vnet2databepool" {
-  resource_group_name = azurerm_resource_group.secondary.name
-  loadbalancer_id     = azurerm_lb.vnet2datalb.id
-  name                = "BackEndAddressPool"
-}
-
-#secondary virtual network- data tier nic
-resource "azurerm_network_interface" "vnet2sqlnic" {
-  name                = var.vnet2sqlnic
-  location            = azurerm_resource_group.secondary.location
-  resource_group_name = azurerm_resource_group.secondary.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.datasubnet2.id
-    private_ip_address_allocation = "Dynamic"
-  }
-}
-
-resource "azurerm_network_interface_backend_address_pool_association" "vnet2sqlnicbepool" {
-  network_interface_id    = azurerm_network_interface.vnet2sqlnic.id
-  ip_configuration_name   = "internal"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.vnet2databepool.id
-}
-
-#secondary virtual network- data tier sql server
-resource "azurerm_virtual_machine" "vnet2sqlserver" {
-  name                  = var.vnet2sqlserver
-  location              = azurerm_resource_group.secondary.location
-  resource_group_name   = azurerm_resource_group.secondary.name
-  network_interface_ids = [azurerm_network_interface.vnet2sqlnic.id]
-  vm_size               = "Standard_DS1_v2"
-
-  #Uncomment this line to delete the OS disk automatically when deleting the VM
-  # delete_os_disk_on_termination = true
-
-  # Uncomment this line to delete the data disks automatically when deleting the VM
-  # delete_data_disks_on_termination = true
-
-  storage_image_reference {
-    publisher = "MicrosoftSQLServer"
-    offer     = "SQL2016SP2-WS2016"
-    sku       = "SQLDEV"
-    version   = "latest"
-  }
-
-  storage_os_disk {
-    name              = "sqltwoosdisk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-  os_profile {
-    computer_name  = "hostname"
-    admin_username = "azureuser"
-    admin_password = "P@55word2022"
-  }
-  os_profile_windows_config {
-    provision_vm_agent = true
+  read_write_endpoint_failover_policy {
+    mode          = "Automatic"
+    grace_minutes = 80
   }
 }
 
@@ -537,7 +413,7 @@ resource "azurerm_bastion_host" "firstBastion" {
 
   ip_configuration {
     name                 = "configbastion1"
-    subnet_id            = azurerm_subnet.AzureBastionSubnet.id
+    subnet_id            = azurerm_subnet.AzureBastionSubnet1.id
     public_ip_address_id = azurerm_public_ip.bastion1_pip.id
   }
 }
@@ -585,18 +461,6 @@ resource "azurerm_lb_backend_address_pool" "bus1bepool" {
   name            = "BackEndAddressPool1"
 }
 
-resource "azurerm_lb_rule" "lb1natrule" {
-   resource_group_name            = azurerm_resource_group.primary.name
-   loadbalancer_id                = azurerm_lb.vnet1buslb.id
-   name                           = "http"
-   protocol                       = "Tcp"
-   frontend_port                  = 50000
-   backend_port                   = 50010
-   backend_address_pool_id        = azurerm_lb_backend_address_pool.bus1bepool.id
-   frontend_ip_configuration_name = "PrivateIPAddress"
-   probe_id                       = azurerm_lb_probe.businesshealth1.id
-}
-
 #LB Created for Business Hosts 2
 resource "azurerm_lb" "vnet2buslb" {
   name                = var.vnet2buslb
@@ -617,29 +481,7 @@ resource "azurerm_lb_backend_address_pool" "bus2bepool" {
   name            = "BackEndAddressPool2"
 }
 
-resource "azurerm_lb_rule" "lb2natrule" {
-   resource_group_name            = azurerm_resource_group.secondary.name
-   loadbalancer_id                = azurerm_lb.vnet2buslb.id
-   name                           = "http"
-   protocol                       = "Tcp"
-   frontend_port                  = 50000
-   backend_port                   = 50010
-   backend_address_pool_id        = azurerm_lb_backend_address_pool.bus2bepool.id
-   frontend_ip_configuration_name = "PrivateIPAddress"
-   probe_id                       = azurerm_lb_probe.businesshealth2.id
-}
-
 #BUSINESS TIER VM1 Scale Set
-#Health probe for the VMS in Business 1
-resource "azurerm_lb_probe" "businesshealth1" {
-  resource_group_name = azurerm_resource_group.primary.location
-  loadbalancer_id     = azurerm_lb.vnet1buslb.id
-  name                = "http-probe-business1"
-  protocol            = "Http"
-  request_path        = "/health"
-  port                = 8080
-}
-
 #Scale Set- Business Teir
 resource "azurerm_virtual_machine_scale_set" "businesstier1" {
   name                = "businesstier1"
@@ -647,18 +489,8 @@ resource "azurerm_virtual_machine_scale_set" "businesstier1" {
   resource_group_name = azurerm_resource_group.primary.name
 
   # automatic rolling upgrade
-  automatic_os_upgrade = true
-  upgrade_policy_mode  = "Rolling"
-
-  rolling_upgrade_policy {
-    max_batch_instance_percent              = 20
-    max_unhealthy_instance_percent          = 20
-    max_unhealthy_upgraded_instance_percent = 5
-    pause_time_between_batches              = "PT0S"
-  }
-
-  # required when using rolling upgrade policy
-  health_probe_id = azurerm_lb_probe.businesshealth1.id
+  automatic_os_upgrade = false
+  upgrade_policy_mode  = "Manual"
 
   sku {
     name     = "Standard_B1s"
@@ -708,35 +540,14 @@ resource "azurerm_virtual_machine_scale_set" "businesstier1" {
 }
 
 #BUSINESS TIER VM2 Scale Set 2
-#Health probe for the VMS in Business 2
-resource "azurerm_lb_probe" "businesshealth2" {
-  resource_group_name = azurerm_resource_group.secondary.location
-  loadbalancer_id     = azurerm_lb.vnet2buslb.id
-  name                = "http-probe-business2"
-  protocol            = "Http"
-  request_path        = "/health"
-  port                = 8080
-}
-
-
 #Scale Set- Business Teir 2
 resource "azurerm_virtual_machine_scale_set" "businesstier2" {
   name                = "businesstier2"
   location            = azurerm_resource_group.secondary.location
   resource_group_name = azurerm_resource_group.secondary.name
   # automatic rolling upgrade
-  automatic_os_upgrade = true
-  upgrade_policy_mode  = "Rolling"
-
-  rolling_upgrade_policy {
-    max_batch_instance_percent              = 20
-    max_unhealthy_instance_percent          = 20
-    max_unhealthy_upgraded_instance_percent = 5
-    pause_time_between_batches              = "PT0S"
-  }
-
-  # required when using rolling upgrade policy (Buisness 2)
-  health_probe_id = azurerm_lb_probe.businesshealth2.id
+  automatic_os_upgrade = false
+  upgrade_policy_mode  = "Manual"
 
   sku {
     name     = "Standard_B1s"

@@ -1,8 +1,8 @@
 terraform {
   backend "azurerm" {
-    resource_group_name  = ""
-    storage_account_name = ""
-    container_name       = ""
-    key                  = ""
+    resource_group_name  = "JCKprojectfinaltest"
+    storage_account_name = "jckprojectfinaltestsa"
+    container_name       = "jckprojectfinaltestcon"
+    key                  = "finaltest_key"
   }
 }
